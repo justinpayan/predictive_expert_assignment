@@ -46,30 +46,9 @@ def build_query_answer_feats(title, body, ans, topic):
     content = "Question:\\nTitle: %s\\n\\nBody: %s\\n\\nAnswer:\\n%s\\n" % (title, body, ans)
     return q, content
 
+
 @torch.inference_mode()
-if __name__ == "__main__":
-    # controller_thread = threading.Thread(target=run_controller)
-    # controller_thread.start()
-    #
-    # model_worker_thread = threading.Thread(target=run_model_worker)
-    # model_worker_thread.start()
-    #
-    # api_server_thread = threading.Thread(target=run_api_server)
-    # api_server_thread.start()
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--topic", type=str, default="cs")
-    parser.add_argument("--feat_type", type=str, default="answer_quality")
-    # Uses vicuna 7b by default
-    add_model_args(parser)
-    parser.add_argument("--temperature", type=float, default=0.7)
-    parser.add_argument("--repetition_penalty", type=float, default=1.0)
-    parser.add_argument("--max-new-tokens", type=int, default=1024)
-    parser.add_argument("--debug", action="store_true")
-    parser.add_argument("--message", type=str, default="Hello! Who are you?")
-
-    args = parser.parse_args()
-
+def main(args):
     topic = args.topic
     feat_type = args.feat_type
 
@@ -103,7 +82,8 @@ if __name__ == "__main__":
                 question_id_to_answers[p['ParentId']].append(p)
                 pid_to_qid[p['Id']] = p['ParentId']
 
-        with open(os.path.join(base_dir, "output/%s_%s_annotations.tsv" % (topic, feat_type)), 'w', encoding='utf-8') as f:
+        with open(os.path.join(base_dir, "output/%s_%s_annotations.tsv" % (topic, feat_type)), 'w',
+                  encoding='utf-8') as f:
             w = csv.writer(f, delimiter="\t")
             w.writerow(["QID", "AID", "Informativeness", "Relevance", "Usefulness"])
             for qid, answers in question_id_to_answers.items():
@@ -145,7 +125,6 @@ if __name__ == "__main__":
                             output_ids, skip_special_tokens=True, spaces_between_special_tokens=False
                         )
 
-
                         print(conv.roles[0])
                         print(conv.roles[1])
                         print(query)
@@ -162,3 +141,19 @@ if __name__ == "__main__":
 
     elif feat_type == "post_similarity":
         pass
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--topic", type=str, default="cs")
+    parser.add_argument("--feat_type", type=str, default="answer_quality")
+    # Uses vicuna 7b by default
+    add_model_args(parser)
+    parser.add_argument("--temperature", type=float, default=0.7)
+    parser.add_argument("--repetition_penalty", type=float, default=1.0)
+    parser.add_argument("--max-new-tokens", type=int, default=1024)
+    parser.add_argument("--debug", action="store_true")
+    parser.add_argument("--message", type=str, default="Hello! Who are you?")
+
+    args = parser.parse_args()
+    main(args)
