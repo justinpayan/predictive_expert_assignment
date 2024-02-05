@@ -62,8 +62,6 @@ if __name__ == "__main__":
     api_server_thread = threading.Thread(target=run_api_server)
     api_server_thread.start()
 
-    time.sleep(600)
-
     args = parse_args()
     topic = args.topic
     feat_type = args.feat_type
