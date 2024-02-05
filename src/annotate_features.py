@@ -66,8 +66,10 @@ if __name__ == "__main__":
     topic = args.topic
     feat_type = args.feat_type
 
+    base_dir = "/work/pi_yzick_umass_edu/jpayan/predictive_expert_assignment"
+
     if feat_type == "answer_quality":
-        tree = ET.parse("data/%s.stackexchange.com/Posts.xml" % topic)
+        tree = ET.parse(os.path.join(base_dir, "data/%s.stackexchange.com/Posts.xml" % topic))
         root = tree.getroot()
         posts = []
         for child in root:
@@ -83,7 +85,7 @@ if __name__ == "__main__":
                 question_id_to_answers[p['ParentId']].append(p)
                 pid_to_qid[p['Id']] = p['ParentId']
 
-        with open("output/%s_%s_annotations.tsv" % (topic, feat_type), 'w', encoding='utf-8') as f:
+        with open(os.path.join(base_dir, "output/%s_%s_annotations.tsv" % (topic, feat_type)), 'w', encoding='utf-8') as f:
             w = csv.writer(f, delimiter="\t")
             w.writerow(["QID", "AID", "Informativeness", "Relevance", "Usefulness"])
             for qid, answers in question_id_to_answers.items():
