@@ -8,6 +8,9 @@ import re
 import csv
 import os
 
+import torch
+from fastchat.model import load_model, get_conversation_template, add_model_args
+
 
 def run_controller():
     subprocess.run(["python3", "-m", "fastchat.serve.controller", "--host", "127.0.0.1"])
@@ -21,14 +24,6 @@ def run_model_worker():
 def run_api_server():
     subprocess.run(["python3", "-m", "fastchat.serve.openai_api_server", "--host", "127.0.0.1", "--controller-address",
                     "http://127.0.0.1:21001", "--port", "8000"])
-
-
-def parse_args():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--topic", type=str, default="cs")
-    parser.add_argument("--feat_type", type=str, default="answer_quality")
-
-    return parser.parse_args()
 
 
 def remove_tabs(x):
@@ -51,22 +46,45 @@ def build_query_answer_feats(title, body, ans, topic):
     content = "Question:\\nTitle: %s\\n\\nBody: %s\\n\\nAnswer:\\n%s\\n" % (title, body, ans)
     return q, content
 
-
+@torch.inference_mode()
 if __name__ == "__main__":
-    controller_thread = threading.Thread(target=run_controller)
-    controller_thread.start()
+    # controller_thread = threading.Thread(target=run_controller)
+    # controller_thread.start()
+    #
+    # model_worker_thread = threading.Thread(target=run_model_worker)
+    # model_worker_thread.start()
+    #
+    # api_server_thread = threading.Thread(target=run_api_server)
+    # api_server_thread.start()
 
-    model_worker_thread = threading.Thread(target=run_model_worker)
-    model_worker_thread.start()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--topic", type=str, default="cs")
+    parser.add_argument("--feat_type", type=str, default="answer_quality")
+    # Uses vicuna 7b by default
+    add_model_args(parser)
+    parser.add_argument("--temperature", type=float, default=0.7)
+    parser.add_argument("--repetition_penalty", type=float, default=1.0)
+    parser.add_argument("--max-new-tokens", type=int, default=1024)
+    parser.add_argument("--debug", action="store_true")
+    parser.add_argument("--message", type=str, default="Hello! Who are you?")
 
-    api_server_thread = threading.Thread(target=run_api_server)
-    api_server_thread.start()
+    args = parser.parse_args()
 
-    args = parse_args()
     topic = args.topic
     feat_type = args.feat_type
 
     base_dir = "/work/pi_yzick_umass_edu/jpayan/predictive_expert_assignment"
+
+    model, tokenizer = load_model(
+        args.model_path,
+        device=args.device,
+        num_gpus=args.num_gpus,
+        max_gpu_memory=args.max_gpu_memory,
+        load_8bit=args.load_8bit,
+        cpu_offloading=args.cpu_offloading,
+        revision=args.revision,
+        debug=args.debug,
+    )
 
     if feat_type == "answer_quality":
         tree = ET.parse(os.path.join(base_dir, "data/%s.stackexchange.com/Posts.xml" % topic))
@@ -96,19 +114,48 @@ if __name__ == "__main__":
                         body = remove_tabs(questions[qid]['Body'])
                         ans = remove_tabs(a['Body'])
                         query, content = build_query_answer_feats(title, body, ans, topic)
-                        llm_query_str = '{"model": "vicuna-7b-v1.5", "messages": [{"role": "system", "content": "%s"}, ' \
-                                        '{"role": "user", "content": "%s"}]}' % (
-                                            query, content)
-                        print(llm_query_str)
-                        os.system('curl http://127.0.0.1:8000/v1/chat/completions \
-                        -H "Content-Type: application/json" \
-                        -d \'' + llm_query_str + ("\' > tmp"))
-                        with open("tmp", 'r') as f:
-                            response = eval(f.read())
-                            full_response = response["choices"][0]["message"]["content"]
-                            informativeness = int(re.search("Informativeness: ([1-5])", full_response)[1])
-                            relevance = int(re.search("Relevance: ([1-5])", full_response)[1])
-                            usefulness = int(re.search("Usefulness: ([1-5])", full_response)[1])
+                        # llm_query_str = '{"model": "vicuna-7b-v1.5", "messages": [{"role": "system", "content": "%s"}, ' \
+                        #                 '{"role": "user", "content": "%s"}]}' % (
+                        #                     query, content)
+                        # print(llm_query_str)
+                        # os.system('curl http://127.0.0.1:8000/v1/chat/completions \
+                        # -H "Content-Type: application/json" \
+                        # -d \'' + llm_query_str + ("\' > tmp"))
+                        # with open("tmp", 'r') as f:
+                        #     response = eval(f.read())
+                        conv = get_conversation_template(args.model_path)
+                        conv.append_message(conv.roles[1], query)
+                        conv.append_message(conv.roles[0], content)
+                        prompt = conv.get_prompt()
+
+                        inputs = tokenizer([prompt], return_tensors="pt").to(args.device)
+                        output_ids = model.generate(
+                            **inputs,
+                            do_sample=True if args.temperature > 1e-5 else False,
+                            temperature=args.temperature,
+                            repetition_penalty=args.repetition_penalty,
+                            max_new_tokens=args.max_new_tokens,
+                        )
+
+                        if model.config.is_encoder_decoder:
+                            output_ids = output_ids[0]
+                        else:
+                            output_ids = output_ids[0][len(inputs["input_ids"][0]):]
+                        outputs = tokenizer.decode(
+                            output_ids, skip_special_tokens=True, spaces_between_special_tokens=False
+                        )
+
+
+                        print(conv.roles[0])
+                        print(conv.roles[1])
+                        print(query)
+                        print(content)
+                        print(outputs)
+
+                        full_response = outputs["choices"][0]["message"]["content"]
+                        informativeness = int(re.search("Informativeness: ([1-5])", full_response)[1])
+                        relevance = int(re.search("Relevance: ([1-5])", full_response)[1])
+                        usefulness = int(re.search("Usefulness: ([1-5])", full_response)[1])
                     except:
                         informativeness, relevance, usefulness = -1, -1, -1
                     w.writerow([qid, aid, informativeness, relevance, usefulness])
