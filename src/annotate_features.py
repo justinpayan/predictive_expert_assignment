@@ -52,6 +52,8 @@ def main(args):
     topic = args.topic
     feat_type = args.feat_type
 
+    os.environ["TRANSFORMERS_CACHE"] = "/work/pi_yzick_umass_edu/jpayan/.cache/huggingface/hub"
+
     base_dir = "/work/pi_yzick_umass_edu/jpayan/predictive_expert_assignment"
 
     model, tokenizer = load_model(
