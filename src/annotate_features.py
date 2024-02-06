@@ -38,11 +38,11 @@ def build_query_answer_feats(title, body, ans, topic):
     q += "Please annotate the informativeness, relevance, and usefulness of the answer. "
     q += "Your response should rate each of these three aspects on a scale from 1-5, with 1 being the least and 5 being the most. "
     q += "Please structure your response by outputting the informativeness, then the relevance, and then the usefulness, one per line. "
-    q += "Please do not include any additional explanation of your ratings. "
+    q += "Please add an additional explanation of your ratings. "
     q += "Informativeness asks Does this answer provide enough information for the question? "
     q += "Relevance asks Is this answer relevant to the question? "
     q += "Usefulness asks Is this answer useful or helpful to address the question?"
-    q += "An example output might look like: Informativeness: <Rating>Relevance: <Rating>\nUsefulness: <Rating>\n\n"
+    q += "Use this template for your output: Informativeness: <Rating>Relevance: <Rating>\nUsefulness: <Rating>\n<Additional Explanation>\n\n"
     content = "Question:\nTitle: %s\n\nBody: %s\n\nAnswer:\n%s\n" % (title, body, ans)
     return q, content
 
@@ -153,14 +153,14 @@ def main(args):
                     print("Output is: ")
                     print(output, flush=True)
 
-                    full_response = output
+                    full_response = output.strip()
                     try:
                         informativeness = int(re.search("Informativeness: ([1-5])", full_response)[1])
                         relevance = int(re.search("Relevance: ([1-5])", full_response)[1])
                         usefulness = int(re.search("Usefulness: ([1-5])", full_response)[1])
                     except:
                         informativeness, relevance, usefulness = -1, -1, -1
-                    w.writerow([qid, aid, informativeness, relevance, usefulness])
+                    w.writerow([qid, aid, informativeness, relevance, usefulness, remove_tabs(full_response)])
 
     elif feat_type == "post_similarity":
         pass
