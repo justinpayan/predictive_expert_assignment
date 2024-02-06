@@ -107,7 +107,6 @@ def main(args):
                     # -d \'' + llm_query_str + ("\' > tmp"))
                     # with open("tmp", 'r') as f:
                     #     response = eval(f.read())
-                    query, content = remove_tabs(query), remove_tabs(content)
 
                     # chat = [
                     #     {"role": "system", "content": query},
