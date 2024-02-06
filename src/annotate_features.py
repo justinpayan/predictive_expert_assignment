@@ -132,7 +132,7 @@ def main(args):
 
                     # inputs = tokenizer([prompt], return_tensors="pt").to(args.device)
                     output_ids = model.generate(
-                        **inputs,
+                        inputs,
                         do_sample=True if args.temperature > 1e-5 else False,
                         temperature=args.temperature,
                         repetition_penalty=args.repetition_penalty,
