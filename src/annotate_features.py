@@ -158,10 +158,11 @@ def main(args):
                         informativeness = int(re.search("Informativeness: ([1-5])", full_response)[1])
                         relevance = int(re.search("Relevance: ([1-5])", full_response)[1])
                         usefulness = int(re.search("Usefulness: ([1-5])", full_response)[1])
-                        explanation = re.search("Explanation: (.*)", full_response)[1]
+                        # explanation = re.search("Explanation: (.*)", full_response)[1]
+                        explanation = remove_tabs(full_response)
                     except:
                         informativeness, relevance, usefulness, explanation = -1, -1, -1, "None"
-                    w.writerow([qid, aid, informativeness, relevance, usefulness, remove_tabs(explanation)])
+                    w.writerow([qid, aid, informativeness, relevance, usefulness, explanation])
                 f.flush()
 
     elif feat_type == "post_similarity":
