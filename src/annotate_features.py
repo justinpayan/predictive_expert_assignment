@@ -89,7 +89,7 @@ def main(args):
         with open(os.path.join(base_dir, "output/%s_%s_annotations.tsv" % (topic, feat_type)), 'w',
                   encoding='utf-8') as f:
             w = csv.writer(f, delimiter="\t")
-            w.writerow(["QID", "AID", "Informativeness", "Relevance", "Usefulness"])
+            w.writerow(["QID", "AID", "Informativeness", "Relevance", "Usefulness", "Explanation"])
             for qid, answers in question_id_to_answers.items():
                 for a in answers:
                     aid = a['Id']
@@ -158,9 +158,10 @@ def main(args):
                         informativeness = int(re.search("Informativeness: ([1-5])", full_response)[1])
                         relevance = int(re.search("Relevance: ([1-5])", full_response)[1])
                         usefulness = int(re.search("Usefulness: ([1-5])", full_response)[1])
+                        explanation = re.search("Explanation: (.*)", full_response)[1]
                     except:
-                        informativeness, relevance, usefulness = -1, -1, -1
-                    w.writerow([qid, aid, informativeness, relevance, usefulness, remove_tabs(full_response)])
+                        informativeness, relevance, usefulness, explanation = -1, -1, -1, "None"
+                    w.writerow([qid, aid, informativeness, relevance, usefulness, remove_tabs(explanation)])
                 f.flush()
 
     elif feat_type == "post_similarity":
