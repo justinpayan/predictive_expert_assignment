@@ -160,6 +160,7 @@ def main(args):
                     except:
                         informativeness, relevance, usefulness = -1, -1, -1
                     w.writerow([qid, aid, informativeness, relevance, usefulness, remove_tabs(full_response)])
+                    f.flush()
 
     elif feat_type == "post_similarity":
         pass
