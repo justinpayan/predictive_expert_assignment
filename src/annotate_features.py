@@ -42,7 +42,7 @@ def build_query_answer_feats(title, body, ans, topic):
     q += "Informativeness asks Does this answer provide enough information for the question? "
     q += "Relevance asks Is this answer relevant to the question? "
     q += "Usefulness asks Is this answer useful or helpful to address the question?\\n\\n"
-    q += "An example output might look like: \\nInformativeness: <Rating>\\nRelevance: <Rating>\\nUsefulness: <Rating>"
+    q += "An example output might look like: \\nInformativeness: <Rating>\\nRelevance: <Rating>\\nUsefulness: <Rating>\\n\\n"
     content = "Question:\\nTitle: %s\\n\\nBody: %s\\n\\nAnswer:\\n%s\\n" % (title, body, ans)
     return q, content
 
@@ -84,6 +84,8 @@ def main(args):
                 question_id_to_answers[p['ParentId']].append(p)
                 pid_to_qid[p['Id']] = p['ParentId']
 
+        print("Posts loaded, beginning feature prediction", flush=True)
+
         with open(os.path.join(base_dir, "output/%s_%s_annotations.tsv" % (topic, feat_type)), 'w',
                   encoding='utf-8') as f:
             w = csv.writer(f, delimiter="\t")
@@ -106,9 +108,11 @@ def main(args):
                         # with open("tmp", 'r') as f:
                         #     response = eval(f.read())
                         conv = get_conversation_template(args.model_path)
-                        conv.append_message(conv.roles[1], query)
-                        conv.append_message(conv.roles[0], content)
+                        conv.append_message(conv.roles[0], query + content)
                         prompt = conv.get_prompt()
+
+                        print("Prompting:")
+                        print(prompt, flush=True)
 
                         inputs = tokenizer([prompt], return_tensors="pt").to(args.device)
                         output_ids = model.generate(
@@ -129,9 +133,7 @@ def main(args):
 
                         print(conv.roles[0])
                         print(conv.roles[1])
-                        print(query)
-                        print(content)
-                        print(outputs)
+                        print(outputs, flush=True)
 
                         full_response = outputs["choices"][0]["message"]["content"]
                         informativeness = int(re.search("Informativeness: ([1-5])", full_response)[1])
