@@ -107,14 +107,30 @@ def main(args):
                         # -d \'' + llm_query_str + ("\' > tmp"))
                         # with open("tmp", 'r') as f:
                         #     response = eval(f.read())
-                        conv = get_conversation_template(args.model_path)
-                        conv.append_message(conv.roles[0], query + content)
-                        prompt = conv.get_prompt()
+                        query, content = remove_tabs(query), remove_tabs(content)
+
+                        chat = [
+                            {"role": "system", "content": query},
+                            {"role": "user", "content": content}
+                        ]
+
+                        inputs = tokenizer.apply_chat_template(chat,
+                                                               tokenize=True,
+                                                               add_generation_prompt=True,
+                                                               return_tensors="pt").to(args.device)
+
+                        prompt = tokenizer.apply_chat_template(chat,
+                                                               tokenize=False,
+                                                               add_generation_prompt=True)
+
+                        # conv = get_conversation_template(args.model_path)
+                        # conv.append_message(conv.roles[0], query + content)
+                        # prompt = conv.get_prompt()
 
                         print("Prompting:")
                         print(prompt, flush=True)
 
-                        inputs = tokenizer([prompt], return_tensors="pt").to(args.device)
+                        # inputs = tokenizer([prompt], return_tensors="pt").to(args.device)
                         output_ids = model.generate(
                             **inputs,
                             do_sample=True if args.temperature > 1e-5 else False,
@@ -131,8 +147,6 @@ def main(args):
                             output_ids, skip_special_tokens=True, spaces_between_special_tokens=False
                         )
 
-                        print(conv.roles[0])
-                        print(conv.roles[1])
                         print(outputs, flush=True)
 
                         full_response = outputs["choices"][0]["message"]["content"]
