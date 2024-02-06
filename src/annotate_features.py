@@ -91,78 +91,79 @@ def main(args):
             w = csv.writer(f, delimiter="\t")
             w.writerow(["QID", "AID", "Informativeness", "Relevance", "Usefulness", "Explanation"])
             for qid, answers in question_id_to_answers.items():
-                for a in answers:
-                    aid = a['Id']
-                    # try:
-                    title = remove_tabs(questions[qid]['Title'])
-                    body = remove_tabs(questions[qid]['Body'])
-                    ans = remove_tabs(a['Body'])
-                    query, content = build_query_answer_feats(title, body, ans, topic)
-                    # llm_query_str = '{"model": "vicuna-7b-v1.5", "messages": [{"role": "system", "content": "%s"}, ' \
-                    #                 '{"role": "user", "content": "%s"}]}' % (
-                    #                     query, content)
-                    # print(llm_query_str)
-                    # os.system('curl http://127.0.0.1:8000/v1/chat/completions \
-                    # -H "Content-Type: application/json" \
-                    # -d \'' + llm_query_str + ("\' > tmp"))
-                    # with open("tmp", 'r') as f:
-                    #     response = eval(f.read())
+                if qid in questions:
+                    for a in answers:
+                        aid = a['Id']
+                        # try:
+                        title = remove_tabs(questions[qid]['Title'])
+                        body = remove_tabs(questions[qid]['Body'])
+                        ans = remove_tabs(a['Body'])
+                        query, content = build_query_answer_feats(title, body, ans, topic)
+                        # llm_query_str = '{"model": "vicuna-7b-v1.5", "messages": [{"role": "system", "content": "%s"}, ' \
+                        #                 '{"role": "user", "content": "%s"}]}' % (
+                        #                     query, content)
+                        # print(llm_query_str)
+                        # os.system('curl http://127.0.0.1:8000/v1/chat/completions \
+                        # -H "Content-Type: application/json" \
+                        # -d \'' + llm_query_str + ("\' > tmp"))
+                        # with open("tmp", 'r') as f:
+                        #     response = eval(f.read())
 
-                    # chat = [
-                    #     {"role": "system", "content": query},
-                    #     {"role": "user", "content": content}
-                    # ]
+                        # chat = [
+                        #     {"role": "system", "content": query},
+                        #     {"role": "user", "content": content}
+                        # ]
 
-                    # inputs = tokenizer.apply_chat_template(chat,
-                    #                                        tokenize=True,
-                    #                                        add_generation_prompt=True,
-                    #                                        return_tensors="pt").to(args.device)
-                    #
-                    # prompt = tokenizer.apply_chat_template(chat,
-                    #                                        tokenize=False,
-                    #                                        add_generation_prompt=True)
+                        # inputs = tokenizer.apply_chat_template(chat,
+                        #                                        tokenize=True,
+                        #                                        add_generation_prompt=True,
+                        #                                        return_tensors="pt").to(args.device)
+                        #
+                        # prompt = tokenizer.apply_chat_template(chat,
+                        #                                        tokenize=False,
+                        #                                        add_generation_prompt=True)
 
-                    conv = get_conversation_template(args.model_path)
-                    conv.set_system_message(query)
-                    conv.append_message(conv.roles[0], content)
-                    conv.append_message(conv.roles[1], None)
-                    prompt = conv.get_prompt()
+                        conv = get_conversation_template(args.model_path)
+                        conv.set_system_message(query)
+                        conv.append_message(conv.roles[0], content)
+                        conv.append_message(conv.roles[1], None)
+                        prompt = conv.get_prompt()
 
-                    print("Prompting:")
-                    print(prompt, flush=True)
+                        print("Prompting:")
+                        print(prompt, flush=True)
 
-                    inputs = tokenizer([prompt], return_tensors="pt").to(args.device)
-                    output_ids = model.generate(
-                        **inputs,
-                        # do_sample=True if args.temperature > 1e-5 else False,
-                        # temperature=args.temperature,
-                        # repetition_penalty=args.repetition_penalty,
-                        # max_new_tokens=args.max_new_tokens,
-                    )
+                        inputs = tokenizer([prompt], return_tensors="pt").to(args.device)
+                        output_ids = model.generate(
+                            **inputs,
+                            # do_sample=True if args.temperature > 1e-5 else False,
+                            # temperature=args.temperature,
+                            # repetition_penalty=args.repetition_penalty,
+                            # max_new_tokens=args.max_new_tokens,
+                        )
 
-                    if model.config.is_encoder_decoder:
-                        output_ids = output_ids[0]
-                    else:
-                        output_ids = output_ids[0][len(inputs["input_ids"][0]):]
-                    print(output_ids)
+                        if model.config.is_encoder_decoder:
+                            output_ids = output_ids[0]
+                        else:
+                            output_ids = output_ids[0][len(inputs["input_ids"][0]):]
+                        print(output_ids)
 
-                    output = tokenizer.decode(
-                        output_ids, skip_special_tokens=True, spaces_between_special_tokens=False
-                    )
+                        output = tokenizer.decode(
+                            output_ids, skip_special_tokens=True, spaces_between_special_tokens=False
+                        )
 
-                    print("Output is: ")
-                    print(output, flush=True)
+                        print("Output is: ")
+                        print(output, flush=True)
 
-                    full_response = output.strip()
-                    try:
-                        informativeness = int(re.search("Informativeness: ([1-5])", full_response)[1])
-                        relevance = int(re.search("Relevance: ([1-5])", full_response)[1])
-                        usefulness = int(re.search("Usefulness: ([1-5])", full_response)[1])
-                        # explanation = re.search("Explanation: (.*)", full_response)[1]
-                        explanation = remove_tabs(full_response)
-                    except:
-                        informativeness, relevance, usefulness, explanation = -1, -1, -1, "None"
-                    w.writerow([qid, aid, informativeness, relevance, usefulness, explanation])
+                        full_response = output.strip()
+                        try:
+                            informativeness = int(re.search("Informativeness: ([1-5])", full_response)[1])
+                            relevance = int(re.search("Relevance: ([1-5])", full_response)[1])
+                            usefulness = int(re.search("Usefulness: ([1-5])", full_response)[1])
+                            # explanation = re.search("Explanation: (.*)", full_response)[1]
+                            explanation = remove_tabs(full_response)
+                        except:
+                            informativeness, relevance, usefulness, explanation = -1, -1, -1, "None"
+                        w.writerow([qid, aid, informativeness, relevance, usefulness, explanation])
                 f.flush()
 
     elif feat_type == "post_similarity":
