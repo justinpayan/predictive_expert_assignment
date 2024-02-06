@@ -139,12 +139,14 @@ def main(args):
                         max_new_tokens=args.max_new_tokens,
                     )
 
-                    if model.config.is_encoder_decoder:
-                        output_ids = output_ids[0]
-                    else:
-                        output_ids = output_ids[0][len(inputs["input_ids"][0]):]
+                    # if model.config.is_encoder_decoder:
+                    #     output_ids = output_ids[0]
+                    # else:
+                    #     output_ids = output_ids[0][len(inputs["input_ids"][0]):]
+                    print(output_ids)
+
                     outputs = tokenizer.decode(
-                        output_ids, skip_special_tokens=True, spaces_between_special_tokens=False
+                        output_ids[0], skip_special_tokens=True, spaces_between_special_tokens=False
                     )
 
                     print(outputs, flush=True)
