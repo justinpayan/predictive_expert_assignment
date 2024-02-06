@@ -145,18 +145,20 @@ def main(args):
                     #     output_ids = output_ids[0][len(inputs["input_ids"][0]):]
                     print(output_ids)
 
-                    outputs = tokenizer.decode(
+                    output = tokenizer.decode(
                         output_ids[0], skip_special_tokens=True, spaces_between_special_tokens=False
                     )
 
-                    print(outputs, flush=True)
+                    print("Output is: ")
+                    print(output, flush=True)
 
-                    full_response = outputs["choices"][0]["message"]["content"]
-                    informativeness = int(re.search("Informativeness: ([1-5])", full_response)[1])
-                    relevance = int(re.search("Relevance: ([1-5])", full_response)[1])
-                    usefulness = int(re.search("Usefulness: ([1-5])", full_response)[1])
-                    # except:
-                    #     informativeness, relevance, usefulness = -1, -1, -1
+                    full_response = output
+                    try:
+                        informativeness = int(re.search("Informativeness: ([1-5])", full_response)[1])
+                        relevance = int(re.search("Relevance: ([1-5])", full_response)[1])
+                        usefulness = int(re.search("Usefulness: ([1-5])", full_response)[1])
+                    except:
+                        informativeness, relevance, usefulness = -1, -1, -1
                     w.writerow([qid, aid, informativeness, relevance, usefulness])
 
     elif feat_type == "post_similarity":
