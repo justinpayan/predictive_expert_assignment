@@ -42,7 +42,7 @@ def build_query_answer_feats(title, body, ans, topic):
     q += "Informativeness asks Does this answer provide enough information for the question? "
     q += "Relevance asks Is this answer relevant to the question? "
     q += "Usefulness asks Is this answer useful or helpful to address the question?"
-    q += "Use this template for your output: Informativeness: <Rating>Relevance: <Rating>\nUsefulness: <Rating>\n<Additional Explanation>\n\n"
+    q += "Use this template for your output: \nInformativeness: <Rating>\nRelevance: <Rating>\nUsefulness: <Rating>\nExplanation: <Additional Explanation>\n\n"
     content = "Question:\nTitle: %s\n\nBody: %s\n\nAnswer:\n%s\n" % (title, body, ans)
     return q, content
 
@@ -125,6 +125,7 @@ def main(args):
                     conv = get_conversation_template(args.model_path)
                     conv.set_system_message(query)
                     conv.append_message(conv.roles[0], content)
+                    conv.append_message(conv.roles[1], None)
                     prompt = conv.get_prompt()
 
                     print("Prompting:")
