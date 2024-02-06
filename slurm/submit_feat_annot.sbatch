@@ -8,5 +8,6 @@
 #SBATCH -G 1
 #SBATCH --time=10-00:00:00
 #SBATCH --partition=gpu-preempt
+#SBATCH --constraint=rtx8000|v100|a100
 
 ./submit_feat_annot.sh
