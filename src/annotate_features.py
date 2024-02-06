@@ -109,44 +109,45 @@ def main(args):
                     #     response = eval(f.read())
                     query, content = remove_tabs(query), remove_tabs(content)
 
-                    chat = [
-                        {"role": "system", "content": query},
-                        {"role": "user", "content": content}
-                    ]
+                    # chat = [
+                    #     {"role": "system", "content": query},
+                    #     {"role": "user", "content": content}
+                    # ]
 
-                    inputs = tokenizer.apply_chat_template(chat,
-                                                           tokenize=True,
-                                                           add_generation_prompt=True,
-                                                           return_tensors="pt").to(args.device)
+                    # inputs = tokenizer.apply_chat_template(chat,
+                    #                                        tokenize=True,
+                    #                                        add_generation_prompt=True,
+                    #                                        return_tensors="pt").to(args.device)
+                    #
+                    # prompt = tokenizer.apply_chat_template(chat,
+                    #                                        tokenize=False,
+                    #                                        add_generation_prompt=True)
 
-                    prompt = tokenizer.apply_chat_template(chat,
-                                                           tokenize=False,
-                                                           add_generation_prompt=True)
-
-                    # conv = get_conversation_template(args.model_path)
-                    # conv.append_message(conv.roles[0], query + content)
-                    # prompt = conv.get_prompt()
+                    conv = get_conversation_template(args.model_path)
+                    conv.set_system_message(query)
+                    conv.append_message(conv.roles[0], content)
+                    prompt = conv.get_prompt()
 
                     print("Prompting:")
                     print(prompt, flush=True)
 
-                    # inputs = tokenizer([prompt], return_tensors="pt").to(args.device)
+                    inputs = tokenizer([prompt], return_tensors="pt").to(args.device)
                     output_ids = model.generate(
-                        inputs,
-                        do_sample=True if args.temperature > 1e-5 else False,
-                        temperature=args.temperature,
-                        repetition_penalty=args.repetition_penalty,
-                        max_new_tokens=args.max_new_tokens,
+                        **inputs,
+                        # do_sample=True if args.temperature > 1e-5 else False,
+                        # temperature=args.temperature,
+                        # repetition_penalty=args.repetition_penalty,
+                        # max_new_tokens=args.max_new_tokens,
                     )
 
-                    # if model.config.is_encoder_decoder:
-                    #     output_ids = output_ids[0]
-                    # else:
-                    #     output_ids = output_ids[0][len(inputs["input_ids"][0]):]
+                    if model.config.is_encoder_decoder:
+                        output_ids = output_ids[0]
+                    else:
+                        output_ids = output_ids[0][len(inputs["input_ids"][0]):]
                     print(output_ids)
 
                     output = tokenizer.decode(
-                        output_ids[0], skip_special_tokens=True, spaces_between_special_tokens=False
+                        output_ids, skip_special_tokens=True, spaces_between_special_tokens=False
                     )
 
                     print("Output is: ")
