@@ -1,6 +1,5 @@
 #! /bin/bash
 #SBATCH --job-name=ex_shap
-/mnt/nfs/scratch1/jpayan/predictive_expert_assignment
 #SBATCH --output=/mnt/nfs/scratch1/jpayan/logs/predictive_expert_assignment/ex_shap.out
 #SBATCH --error=/mnt/nfs/scratch1/jpayan/logs/predictive_expert_assignment/ex_shap.err
 #SBATCH --nodes=1
