@@ -1,6 +1,6 @@
 #! /bin/bash
 
-for SEED in {0..9}; do
+for SEED in {0..999}; do
     sbatch \
     --job-name=compute_assts_${SEED} \
     --output=/mnt/nfs/scratch1/jpayan/logs/predictive_expert_assignment/compute_assts_${SEED}.out \
