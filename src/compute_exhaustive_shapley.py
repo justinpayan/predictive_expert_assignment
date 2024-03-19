@@ -104,6 +104,7 @@ def main(args):
                                             train_set, train_evs, test_set,
                                             test_evs, xe_test_constant)
         test_xe_dict[feat_selector] = test_xe
+    pickle.dump(test_xe_dict, open(os.path.join(data_dir, "test_xe_dict.pkl"), 'wb'))
 
 
 if __name__ == "__main__":
