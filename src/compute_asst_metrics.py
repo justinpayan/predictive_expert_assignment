@@ -75,7 +75,7 @@ def main(args):
     hasScore = np.load(os.path.join(data_dir, "hasScore.npy"))
     pair_to_feats = pickle.load(open(os.path.join(data_dir, "pair_to_feats.pkl"), 'rb'))
     scaled_test = np.load(os.path.join(data_dir, "scaled_test.npy"))
-    xe_test = pickle.load(open(os.path.join(data_dir, "npy", "xe_test.pkl"), 'rb'))
+    xe_test = pickle.load(open(os.path.join(data_dir, "xe_test.pkl"), 'rb'))
 
     # Select a subset of users and questions to work with
     chosen_experts = np.load(os.path.join(data_dir, "chosen_experts_%d.npy" % seed))
