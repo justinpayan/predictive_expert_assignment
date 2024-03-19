@@ -48,7 +48,7 @@ def main(args):
     np.save(os.path.join(data_dir, "alloc_%d.npy" % seed), alloc)
 
     # for lam in np.arange(0, 1.01, .1):
-    for lam in range(1):
+    for lam in range(11):
         print("Starting on lambda=", lam, flush=True)
         lambda_val = lam*.1
         non_pred_scores = lambda_val * user_rep_scores / np.max(user_rep_scores)
@@ -56,7 +56,7 @@ def main(args):
         _, alloc_non_pred = solve_usw_gurobi(non_pred_scores, covs, loads)
         np.save(os.path.join(data_dir, "alloc_non_pred_%d_%d.npy" % (lam, seed)), alloc_non_pred)
 
-    for ridx in range(1):
+    for ridx in range(100):
         print("Starting on ridx=", ridx, flush=True)
         rand_scores = rng.uniform(0, 1, size=alloc.shape)
         _, alloc_rand = solve_usw_gurobi(rand_scores, covs, loads)
