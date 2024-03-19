@@ -167,6 +167,9 @@ def main(args):
     print("Done computing standard metrics, moving to lower and upper bounds", flush=True)
 
     # Compute the worst and best case scores
+    metric_to_allocation_scores['best_usw'] = {}
+    metric_to_allocation_scores['worst_usw'] = {}
+
     all_allocs = [pred_alloc] + non_pred_allocs + rand_allocs
     all_names = ['pred'] + list(range(11)) + ["rand" + str(i) for i in range(100)]
 
@@ -198,8 +201,8 @@ def main(args):
         worst_usw = np.sum(6 * v_worst - 5) / total_assts
         best_usw = np.sum(6 * v_best - 5) / total_assts
 
-        metric_to_allocation_scores['best_usw'][alloc_name] = worst_usw
-        metric_to_allocation_scores['worst_usw'][alloc_name] = best_usw
+        metric_to_allocation_scores['best_usw'][alloc_name] = best_usw
+        metric_to_allocation_scores['worst_usw'][alloc_name] = worst_usw
 
         pickle.dump(metric_to_allocation_scores,
                     open(os.path.join(data_dir, "metric_to_allocation_scores_%d.pkl" % seed), 'wb'))
