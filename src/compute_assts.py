@@ -1,6 +1,7 @@
 import argparse
 import numpy as np
 import os
+import pickle
 import sys
 sys.path.append("/mnt/nfs/scratch1/jpayan/RAU")
 from solve_usw import solve_usw_gurobi
@@ -15,8 +16,8 @@ def main(args):
     # user_rep_scores
     data_dir = os.path.join(base_dir, "data", "%s.stackexchange.com" % topic, "npy")
     asst_scores = np.load(os.path.join(data_dir, "asst_scores.npy"))
-    covs = np.load(os.path.join(data_dir, "covs.npy"))
-    loads = np.load(os.path.join(data_dir, "loads.npy"))
+    covs = pickle.load(open(os.path.join(data_dir, "covs.pkl"), 'rb'))
+    loads = pickle.load(open(os.path.join(data_dir, "loads.pkl"), 'rb'))
     user_rep_scores = np.load(os.path.join(data_dir, "user_rep_scores.npy"))
     kp_matching_scores = np.load(os.path.join(data_dir, "kp_matching_scores.npy"))
 
