@@ -1,43 +1,15 @@
 import argparse
-import numpy as np
-import os
-import pickle
-import sys
 import cvxpy as cp
-sys.path.append("/mnt/nfs/scratch1/jpayan/RAU")
-from solve_usw import solve_usw_gurobi
-
-from collections import defaultdict, Counter
-from datetime import datetime
-from xml.etree import ElementTree as ET
-import seaborn as sns
-import matplotlib.pyplot as plt
-from sentence_transformers import SentenceTransformer, util
-from tqdm.notebook import trange, tqdm
-from sklearn.metrics import pairwise_distances, log_loss
-import ot
 import numpy as np
-from itertools import combinations
-import random
-import pandas as pd
-from sklearn.linear_model import LogisticRegression, LinearRegression
-from sklearn.preprocessing import StandardScaler
-from copy import deepcopy
 import pickle
-from scipy.special import expit, logit
-import torch
-from torch import nn
-from sklearn.isotonic import IsotonicRegression
-import csv, os, re
+import os
 from sklearn.decomposition import PCA
 from sklearn.neighbors import KernelDensity
-from scipy.special import logsumexp
 
 
 def est_dens_ratio(input_vects, reference_vects):
     pca_ref = PCA(n_components=2).fit(reference_vects)
     kde_ref = KernelDensity().fit(pca_ref.transform(reference_vects))
-    log_density_ref = kde_ref.score_samples(pca_ref.transform(reference_vects))
 
     pca = PCA(n_components=2).fit_transform(input_vects)
     kde = KernelDensity().fit(pca)
