@@ -14,5 +14,6 @@ for SEED in {0..999}; do
         --time=0-6:00:00 \
         --partition=defq \
         ./submit_compute_asst_metrics.sh $SEED
+        sleep 1
     fi
 done
