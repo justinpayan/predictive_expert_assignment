@@ -111,6 +111,9 @@ def main(args):
     print("Data loaded. Loading allocations", flush=True)
     pred_alloc = np.load(os.path.join(data_dir, "alloc_%d.npy" % seed))
 
+    pred_alloc_user_embs = np.load(os.path.join(data_dir, "alloc_user_embs_%d.npy" % seed))
+    pred_alloc_badges = np.load(os.path.join(data_dir, "alloc_badges_%d.npy" % seed))
+
     non_pred_allocs = []
 
     for lam in range(11):
@@ -140,6 +143,8 @@ def main(args):
         for idx, alloc_non_pred in enumerate(non_pred_allocs):
             metric_to_allocation_scores[metric_name][idx] = np.sum(alloc_non_pred * metric_matrix) / total_assts
         metric_to_allocation_scores[metric_name]['pred'] = np.sum(pred_alloc * metric_matrix) / total_assts
+        metric_to_allocation_scores[metric_name]['pred_user_embs'] = np.sum(pred_alloc_user_embs * metric_matrix) / total_assts
+        metric_to_allocation_scores[metric_name]['pred_badges'] = np.sum(pred_alloc_badges * metric_matrix) / total_assts
 
         for idx, alloc_rand in enumerate(rand_allocs):
             metric_to_allocation_scores[metric_name]["rand" + str(idx)] = np.sum(alloc_rand * metric_matrix) / total_assts
@@ -153,6 +158,8 @@ def main(args):
         metric_to_allocation_scores[metric_name]["rand" + str(idx)] = np.sum(alloc_rand * realScores) / np.sum(
             alloc_rand * hasScore)
     metric_to_allocation_scores[metric_name]['pred'] = np.sum(pred_alloc * realScores) / np.sum(pred_alloc * hasScore)
+    metric_to_allocation_scores[metric_name]['pred_user_embs'] = np.sum(pred_alloc_user_embs * realScores) / np.sum(pred_alloc_user_embs * hasScore)
+    metric_to_allocation_scores[metric_name]['pred_badges'] = np.sum(pred_alloc_badges * realScores) / np.sum(pred_alloc_badges * hasScore)
 
     metric_name = 'Hits'
     metric_to_allocation_scores[metric_name] = {}
@@ -161,6 +168,8 @@ def main(args):
     for idx, alloc_rand in enumerate(rand_allocs):
         metric_to_allocation_scores[metric_name]["rand" + str(idx)] = np.sum(alloc_rand * hasScore)
     metric_to_allocation_scores[metric_name]['pred'] = np.sum(pred_alloc * hasScore)
+    metric_to_allocation_scores[metric_name]['pred_user_embs'] = np.sum(pred_alloc_user_embs * hasScore)
+    metric_to_allocation_scores[metric_name]['pred_badges'] = np.sum(pred_alloc_badges * hasScore)
 
     pickle.dump(metric_to_allocation_scores,
                 open(os.path.join(data_dir, "metric_to_allocation_scores_%d.pkl" % seed), 'wb'))
@@ -170,8 +179,8 @@ def main(args):
     metric_to_allocation_scores['best_usw'] = {}
     metric_to_allocation_scores['worst_usw'] = {}
 
-    all_allocs = [pred_alloc] + non_pred_allocs + rand_allocs
-    all_names = ['pred'] + list(range(11)) + ["rand" + str(i) for i in range(100)]
+    all_allocs = [pred_alloc, pred_alloc_user_embs, pred_alloc_badges] + non_pred_allocs + rand_allocs
+    all_names = ['pred', 'pred_user_embs', 'pred_badges'] + list(range(11)) + ["rand" + str(i) for i in range(100)]
 
     delta = .1
     n_samples = len(scaled_test)
