@@ -86,7 +86,7 @@ def main(args):
 
         print("Posts loaded, beginning feature prediction", flush=True)
 
-        outfilename = os.path.join(base_dir, "output/%s_%s_annotations.tsv" % (topic, feat_type))
+        outfilename = os.path.join(base_dir, "output/%s/%s_annotations.tsv" % (topic, feat_type))
 
         known_pairs = set()
         if os.path.exists(outfilename):

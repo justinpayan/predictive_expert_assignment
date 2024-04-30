@@ -42,9 +42,9 @@ def main(args):
     sorted_all_ids = sorted(list(id_to_title_and_body.keys()))
     sorted_has_title = sorted([x for x in id_to_title_and_body.keys() if 'Title' in id_to_title_and_body[x]])
 
-    with open(os.path.join(base_dir, "output/%s_all_ids.pkl" % topic), 'wb') as f:
+    with open(os.path.join(base_dir, "output/%s/all_ids.pkl" % topic), 'wb') as f:
         pickle.dump(sorted_all_ids, f)
-    with open(os.path.join(base_dir, "output/%s_ids_for_titles.pkl" % topic), 'wb') as f:
+    with open(os.path.join(base_dir, "output/%s/ids_for_titles.pkl" % topic), 'wb') as f:
         pickle.dump(sorted_has_title, f)
 
     # Now compute the embeddings
@@ -55,18 +55,18 @@ def main(args):
     body_embs = model.encode(all_bodies, convert_to_tensor=True)
 
     # Write out embeddings
-    np.save(os.path.join(base_dir, "output/%s_title_embs.npy" % topic), title_embs.detach().cpu().numpy())
-    np.save(os.path.join(base_dir, "output/%s_body_embs.npy" % topic), body_embs.detach().cpu().numpy())
+    np.save(os.path.join(base_dir, "output/%s/title_embs.npy" % topic), title_embs.detach().cpu().numpy())
+    np.save(os.path.join(base_dir, "output/%s/body_embs.npy" % topic), body_embs.detach().cpu().numpy())
 
     # Compute cosine similarities ahead of time
     cos_sims_title_title = util.cos_sim(title_embs, title_embs)[0]
-    np.save(os.path.join(base_dir, "output/%s_cos_sims_title_title.npy" % topic), cos_sims_title_title.detach().cpu().numpy())
+    np.save(os.path.join(base_dir, "output/%s/cos_sims_title_title.npy" % topic), cos_sims_title_title.detach().cpu().numpy())
 
     cos_sims_title_body = util.cos_sim(title_embs, body_embs)[0]
-    np.save(os.path.join(base_dir, "output/%s_cos_sims_title_body.npy" % topic), cos_sims_title_body.detach().cpu().numpy())
+    np.save(os.path.join(base_dir, "output/%s/cos_sims_title_body.npy" % topic), cos_sims_title_body.detach().cpu().numpy())
 
     cos_sims_body_body = util.cos_sim(body_embs, body_embs)[0]
-    np.save(os.path.join(base_dir, "output/%s_cos_sims_body_body.npy" % topic), cos_sims_body_body.detach().cpu().numpy())
+    np.save(os.path.join(base_dir, "output/%s/cos_sims_body_body.npy" % topic), cos_sims_body_body.detach().cpu().numpy())
 
 
 if __name__ == "__main__":

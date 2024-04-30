@@ -1,13 +1,16 @@
 #! /bin/bash
-#SBATCH --job-name=llm_feat_annot
-#SBATCH --output=/work/pi_yzick_umass_edu/jpayan/logs/predictive_expert_assignment/feat_annot_cs.out
-#SBATCH --error=/work/pi_yzick_umass_edu/jpayan/logs/predictive_expert_assignment/feat_annot_cs.err
-#SBATCH --nodes=1
-#SBATCH --ntasks=1
-#SBATCH --mem-per-gpu=32G
-#SBATCH -G 1
-#SBATCH --time=10-00:00:00
-#SBATCH --partition=gpu-preempt
-#SBATCH --constraint=rtx8000|v100|a100
 
-./submit_feat_annot.sh
+TOPIC=$1
+
+sbatch \
+--job-name=${TOPIC}_llm_feat_annot \
+--output=/work/pi_yzick_umass_edu/jpayan/logs/predictive_expert_assignment/feat_annot_${TOPIC}.out \
+--error=/work/pi_yzick_umass_edu/jpayan/logs/predictive_expert_assignment/feat_annot_${TOPIC}.err \
+--nodes=1 \
+--ntasks=1 \
+--mem-per-gpu=32G \
+-G 1 \
+--time=10-00:00:00 \
+--partition=gpu-preempt \
+--constraint=rtx8000|v100|a100 \
+./submit_feat_annot.sh $TOPIC
