@@ -2,6 +2,7 @@
 
 module load gurobi/1001
 
-SEED=$1
+TOPIC=$1
+SEED=$2
 
-python ../src/compute_asst_metrics.py --topic cs --seed $SEED
+python ../src/compute_asst_metrics.py --topic $TOPIC --seed $SEED

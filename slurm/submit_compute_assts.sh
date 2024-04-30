@@ -2,9 +2,10 @@
 
 module load gurobi/1001
 
-SEED=$1
+TOPIC=$1
+SEED=$2
 
-python ../src/compute_assts.py --topic cs --seed $SEED
+python ../src/compute_assts.py --topic $TOPIC --seed $SEED
 
 
 
