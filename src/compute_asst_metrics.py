@@ -171,8 +171,6 @@ def main(args):
     metric_to_allocation_scores[metric_name]['pred_user_embs'] = np.sum(pred_alloc_user_embs * hasScore)
     metric_to_allocation_scores[metric_name]['pred_badges'] = np.sum(pred_alloc_badges * hasScore)
 
-    pickle.dump(metric_to_allocation_scores,
-                open(os.path.join(data_dir, "metric_to_allocation_scores_%d.pkl" % seed), 'wb'))
     print("Done computing standard metrics, moving to lower and upper bounds", flush=True)
 
     # Compute the worst and best case scores
