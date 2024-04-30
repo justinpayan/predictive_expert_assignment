@@ -12,6 +12,6 @@ sbatch \
 -G 1 \
 --time=3-00:00:00 \
 --partition=gpu-preempt \
---constraint=rtx8000 \
+--constraint="rtx8000|a100" \
 ./submit_embed_qa.sh $TOPIC
 
