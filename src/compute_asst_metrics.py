@@ -120,7 +120,7 @@ def main(args):
             os.path.join(data_dir, "alloc_non_pred_%d_%d.npy" % (lam, seed))))
 
     rand_allocs = []
-    for ridx in range(100):
+    for ridx in range(1):
         print("Loading ridx=", ridx, flush=True)
         rand_allocs.append(
             np.load(os.path.join(data_dir, "alloc_rand_%d_%d.npy" % (ridx, seed))))

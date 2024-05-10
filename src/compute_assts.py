@@ -79,7 +79,7 @@ def main(args):
             _, alloc_non_pred = solve_usw_gurobi(non_pred_scores, covs, loads)
             np.save(os.path.join(data_dir, "alloc_non_pred_%d_%d.npy" % (lam, seed)), alloc_non_pred)
 
-        for ridx in range(100):
+        for ridx in range(1):
             print("Starting on ridx=", ridx, flush=True)
             rand_scores = rng.uniform(0, 1, size=alloc.shape)
             _, alloc_rand = solve_usw_gurobi(rand_scores, covs, loads)
