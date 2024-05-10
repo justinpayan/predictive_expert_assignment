@@ -107,10 +107,8 @@ def main(args):
     hasScore = hasScore[:, chosen_queries]
 
     # Load up the allocations
-    # Now just compute all the assignments, and save them out.
     print("Data loaded. Loading allocations", flush=True)
     pred_alloc = np.load(os.path.join(data_dir, "alloc_%d.npy" % seed))
-
     pred_alloc_user_embs = np.load(os.path.join(data_dir, "alloc_user_embs_%d.npy" % seed))
     pred_alloc_badges = np.load(os.path.join(data_dir, "alloc_badges_%d.npy" % seed))
 
