@@ -35,7 +35,9 @@ def main(args):
 
     alloc_fname = os.path.join(data_dir, "alloc_%d.npy" % seed)
 
-    if not os.path.exists(alloc_fname):
+    rand_fname = os.path.join(data_dir, "alloc_rand_%d_%d.npy" % (1, seed))
+
+    if not os.path.exists(rand_fname):
         np.save(os.path.join(data_dir, "chosen_experts_%d.npy" % seed), chosen_experts)
         np.save(os.path.join(data_dir, "chosen_queries_%d.npy" % seed), chosen_queries)
 
