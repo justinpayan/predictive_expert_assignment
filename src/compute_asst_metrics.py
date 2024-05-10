@@ -176,7 +176,7 @@ def main(args):
     metric_to_allocation_scores['worst_usw'] = {}
 
     all_allocs = [pred_alloc, pred_alloc_user_embs, pred_alloc_badges] + non_pred_allocs + rand_allocs
-    all_names = ['pred', 'pred_user_embs', 'pred_badges'] + list(range(11)) + ["rand" + str(i) for i in range(100)]
+    all_names = ['pred', 'pred_user_embs', 'pred_badges'] + list(range(11)) + ["rand" + str(i) for i in range(1)]
 
     delta = .1
     n_samples = len(scaled_test)
