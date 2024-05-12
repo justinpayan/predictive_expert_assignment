@@ -12,10 +12,10 @@ for SEED in {0..999}; do
         --job-name=compute_assts_${SEED} \
         --output=/mnt/nfs/scratch1/jpayan/logs/predictive_expert_assignment/compute_assts_${TOPIC}_${SEED}.out \
         --error=/mnt/nfs/scratch1/jpayan/logs/predictive_expert_assignment/compute_assts_${TOPIC}_${SEED}.err \
-        --mem=16G \
+        --mem=32G \
         --nodes=1 \
         --ntasks=1 \
-        --time=0-6:00:00 \
+        --time=0-23:59:00 \
         --partition=defq \
         ./submit_compute_assts.sh ${TOPIC} $SEED
         sleep .1
