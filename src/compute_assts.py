@@ -99,7 +99,7 @@ def main(args):
 
         for ridx in range(1):
             print("Starting on ridx=", ridx, flush=True)
-            rand_scores = rng.uniform(0, 1, size=alloc.shape)
+            rand_scores = rng.uniform(0, 1, size=asst_scores.shape)
             _, alloc_rand = solve_usw_gurobi(rand_scores, covs, loads)
             np.save(os.path.join(data_dir, "alloc_rand_%d_%d.npy" % (ridx, seed)), alloc_rand)
 
