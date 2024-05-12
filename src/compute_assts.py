@@ -58,28 +58,44 @@ def main(args):
 
         # Now just compute all the assignments, and save them out.
         print("Data loaded. Starting allocations", flush=True)
-        est_usw, alloc = solve_usw_gurobi(asst_scores, covs, loads)
-        print("Finished with pred asst, est_usw is ", est_usw, flush=True)
-        np.save(os.path.join(data_dir, "alloc_%d.npy" % seed), alloc)
+        fname = os.path.join(data_dir, "alloc_%d.npy" % seed)
+        if not os.path.exists(fname):
+            est_usw, alloc = solve_usw_gurobi(asst_scores, covs, loads)
+            print("Finished with pred asst, est_usw is ", est_usw, flush=True)
+            np.save(fname, alloc)
+        else:
+            print("Skipping pred")
 
-        est_usw, alloc = solve_usw_gurobi(asst_scores_badges, covs, loads)
-        print("Finished with pred asst with badges, est_usw is ", est_usw, flush=True)
-        np.save(os.path.join(data_dir, "alloc_badges_%d.npy" % seed), alloc)
+        fname = os.path.join(data_dir, "alloc_badges_%d.npy" % seed)
+        if not os.path.exists(fname):
+            est_usw, alloc = solve_usw_gurobi(asst_scores_badges, covs, loads)
+            print("Finished with pred asst with badges, est_usw is ", est_usw, flush=True)
+            np.save(fname, alloc)
+        else:
+            print("Skipping badges")
 
-        est_usw, alloc = solve_usw_gurobi(asst_scores_user_embs, covs, loads)
-        print("Finished with pred asst with user embs, est_usw is ", est_usw, flush=True)
-        np.save(os.path.join(data_dir, "alloc_user_embs_%d.npy" % seed), alloc)
+        fname = os.path.join(data_dir, "alloc_user_embs_%d.npy" % seed)
+        if not os.path.exists(fname):
+            est_usw, alloc = solve_usw_gurobi(asst_scores_user_embs, covs, loads)
+            print("Finished with pred asst with user embs, est_usw is ", est_usw, flush=True)
+            np.save(fname, alloc)
+        else:
+            print("Skipping user embs")
 
         # for lam in np.arange(0, 1.01, .1):
         for lam in range(11):
             print("Starting on lambda=", lam, flush=True)
-            lambda_val = lam*.1
-            non_pred_scores = lambda_val * user_rep_scores / np.max(user_rep_scores)
-            # non_pred_scores += (1 - lambda_val) * kp_matching_scores / np.max(kp_matching_scores)
-            non_pred_scores += (1 - lambda_val) * sim_scores / np.max(sim_scores)
+            fname = os.path.join(data_dir, "alloc_non_pred_%d_%d.npy" % (lam, seed))
+            if not os.path.exists(fname):
+                lambda_val = lam*.1
+                non_pred_scores = lambda_val * user_rep_scores / np.max(user_rep_scores)
+                # non_pred_scores += (1 - lambda_val) * kp_matching_scores / np.max(kp_matching_scores)
+                non_pred_scores += (1 - lambda_val) * sim_scores / np.max(sim_scores)
 
-            _, alloc_non_pred = solve_usw_gurobi(non_pred_scores, covs, loads)
-            np.save(os.path.join(data_dir, "alloc_non_pred_%d_%d.npy" % (lam, seed)), alloc_non_pred)
+                _, alloc_non_pred = solve_usw_gurobi(non_pred_scores, covs, loads)
+                np.save(fname, alloc_non_pred)
+            else:
+                print("Skipping nonpred %d" % lam)
 
         for ridx in range(1):
             print("Starting on ridx=", ridx, flush=True)
