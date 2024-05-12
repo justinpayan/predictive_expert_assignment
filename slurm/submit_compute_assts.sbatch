@@ -15,7 +15,7 @@ for SEED in {0..999}; do
         --mem=32G \
         --nodes=1 \
         --ntasks=1 \
-        --time=0-23:59:00 \
+        --time=0-11:00:00 \
         --partition=defq \
         ./submit_compute_assts.sh ${TOPIC} $SEED
         sleep .1
