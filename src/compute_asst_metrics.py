@@ -439,7 +439,8 @@ def main(args):
                     open(os.path.join(data_dir, "metric_to_allocation_scores_%d.pkl" % seed), 'wb'))
         print("LB/UB mono for %s is %.2f, %.2f" % (alloc_name, lb_mono, ub_mono), flush=True)
 
-        for lip_level in [1, 2, 3]:
+        # for lip_level in [1, 2, 3]:
+        for lip_level in [2]:
             lb_lip, ub_lip = \
                 compute_ymin_ymax_lipschitz(alloc, realScores, hasScore,
                                             user_rep_scores, estimated_topical_sim,
