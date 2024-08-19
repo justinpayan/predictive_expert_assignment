@@ -316,7 +316,7 @@ def main(args):
 
     non_pred_allocs = []
 
-    for lam in range(11):
+    for lam in [5]:
         print("Loading lambda=", lam, flush=True)
         non_pred_allocs.append(np.load(
             os.path.join(data_dir, "alloc_non_pred_%d_%d.npy" % (lam, seed))))
