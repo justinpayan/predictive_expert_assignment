@@ -1,5 +1,6 @@
 import argparse
 import cvxpy as cp
+import gurobipy as gp
 import numpy as np
 import pickle
 import os
@@ -50,6 +51,207 @@ def get_best_case(preds_score, dens_ratio, emp_loss, n_samples, delta,
                    num_pap, cov_constr, gamma=1.3):
     return get_extreme_case(cp.Maximize, preds_score, dens_ratio, emp_loss, n_samples, delta,
                      num_pap, cov_constr, gamma)
+
+
+def norm_zero_one(X_all):
+    assert X_all.shape[1] <= 3
+    for dim in range(X_all.shape[1]):
+        Xi = X_all[:, dim]
+        mask = ~np.isnan(Xi)
+        a = np.min(Xi[mask])
+        b = np.max(Xi[mask])
+        X_all[:, dim] = (Xi - a) / (b - a)
+
+
+def compute_ymin_ymax_monotonic(alloc, realScores, hasScore, userRep, estSimScores, kpScores):
+    observed = np.where(hasScore > .5)
+    obs_idx = []
+    for i, j in zip(observed[0], observed[1]):
+        obs_idx.append(i * alloc.shape[1] + j)
+    alloc_but_not_obs = np.where((alloc > .5) & (hasScore < .5))
+    vio_idx = []
+    for i, j in zip(alloc_but_not_obs[0], alloc_but_not_obs[1]):
+        vio_idx.append(i * alloc.shape[1] + j)
+
+    X = np.column_stack((userRep.flatten(), estSimScores.flatten(), kpScores.flatten()))
+    norm_zero_one(X)
+
+    X_obs = X[obs_idx, :]
+    X_vio = X[vio_idx, :]
+
+    def cdom(X1, X2):
+        weak = np.all(X1[:, np.newaxis, :] >= X2[np.newaxis, :, :], axis=-1)
+        assert weak.shape == (X1.shape[0], X2.shape[0])
+        strong = np.any(X1[:, np.newaxis, :] > X2[np.newaxis, :, :], axis=-1)
+        assert strong.shape == (X1.shape[0], X2.shape[0])
+        dom = (weak & strong)
+        return dom  # dom_ij == 1 <-> i dom j
+
+    X_obs_vio = np.concatenate((X_obs, X_vio))
+    dom = cdom(X_obs_vio, X_obs_vio)
+
+    m = gp.Model()
+
+    m.setParam('Method', 1)
+    N_obs = int(np.sum(hasScore))
+    N_vio = np.sum((hasScore < .5) & (alloc > .5))
+    obj_T = np.zeros(X_obs_vio.shape[0])
+
+    obj_T[N_obs:] = 1
+    y_min = -5
+    y_max = 1
+    T = m.addMVar(N_obs + N_vio, lb=y_min, ub=y_max, obj=obj_T)
+
+    lam = 1e9
+    delta_obs = m.addMVar(N_obs, lb=0, ub=y_max - y_min, obj=lam)
+    m.modelSense = gp.GRB.MINIMIZE
+
+    Y_obs = realScores[hasScore > .5]
+    m.addConstr(T[:N_obs] - Y_obs <= delta_obs)
+    m.addConstr(Y_obs - T[:N_obs] <= delta_obs)
+
+    mask = np.zeros((N_obs + N_vio, N_obs + N_vio))
+    I = np.eye(N_obs + N_vio)
+    LB = np.full(dom.shape, y_min - y_max)  # no bound if not dom, else 0
+    LB[dom] = 0
+    for i in range(N_obs + N_vio):
+        mask[:, i] = 1
+        # dom[i, :] is "does i dominate :"
+        m.addConstr(((mask - I) @ T) >= LB[i, :])  # T_i - T_j for all j * dom_ij
+        mask[:, i] = 0
+
+    m.setParam('OutputFlag', 1)
+    m.optimize()
+
+    info = {'lam': lam}
+
+    if m.status == gp.GRB.OPTIMAL:
+        dist = np.abs(delta_obs.x - np.abs(T.x[:N_obs] - Y_obs))
+        print('Max delta dist:', np.max(dist), '; Total dist:', np.sum(dist))
+
+        info['min_obj'] = m.objVal
+        info['min_T_obj'] = np.sum(T.x[N_obs:])
+        info['min_delta_obs'] = delta_obs.x
+    else:
+        info['min_status'] = m.status
+
+    T.obj = -obj_T
+    m.optimize()
+
+    if m.status == gp.GRB.OPTIMAL:
+        dist = np.abs(delta_obs.x - np.abs(T.x[:N_obs] - Y_obs))
+        print('Max delta dist:', np.max(dist), '; Total dist:', np.sum(dist))
+
+        info['max_obj'] = m.objVal
+        info['max_T_obj'] = np.sum(T.x[N_obs:])
+        info['max_delta_obs'] = delta_obs.x
+    else:
+        info['max_status'] = m.status
+
+    min_obj = info['min_T_obj'] + np.sum((alloc * realScores)[alloc * hasScore > .5])
+    min_obj /= np.sum(alloc)
+    max_obj = info['max_T_obj'] + np.sum((alloc * realScores)[alloc * hasScore > .5])
+    max_obj /= np.sum(alloc)
+
+    return min_obj, max_obj
+
+
+def compute_ymin_ymax_lipschitz(alloc, realScores, hasScore, userRep, estSimScores, kpScores, L_const):
+    observed = np.where(hasScore > .5)
+    obs_idx = []
+    for i, j in zip(observed[0], observed[1]):
+        obs_idx.append(i * alloc.shape[1] + j)
+    alloc_but_not_obs = np.where((alloc > .5) & (hasScore < .5))
+    vio_idx = []
+    for i, j in zip(alloc_but_not_obs[0], alloc_but_not_obs[1]):
+        vio_idx.append(i * alloc.shape[1] + j)
+
+    X = np.column_stack((userRep.flatten(), estSimScores.flatten(), kpScores.flatten()))
+    norm_zero_one(X)
+
+    X_obs = X[obs_idx, :]
+    X_vio = X[vio_idx, :]
+
+    def cdist_lip(X1, X2):
+        D = np.zeros((X1.shape[0], X2.shape[0]))
+        for i in range(X1.shape[1]):
+            Di = np.abs(np.subtract.outer(X1[:, i], X2[:, i]))
+            Di[np.isnan(Di)] = 1
+            D += Di
+        D /= X1.shape[1]
+        return D
+
+    N_obs = int(np.sum(hasScore))
+    N_vio = np.sum((hasScore < .5) & (alloc > .5))
+
+    D_obs_obs = cdist_lip(X_obs, X_obs)
+    D_vio_obs = cdist_lip(X_vio, X_obs)
+    D_vio_vio = cdist_lip(X_vio, X_vio)
+    D = np.zeros((N_obs + N_vio, N_obs + N_vio))
+    D[:N_obs, :N_obs] = D_obs_obs
+    D[N_obs:, N_obs:] = D_vio_vio
+    D[N_obs:, :N_obs] = D_vio_obs
+    D[:N_obs, N_obs:] = D_vio_obs.T
+
+    m = gp.Model()
+    m.setParam('OutputFlag', 1)
+    m.setParam('Method', 1)
+
+    obj_T = np.zeros(N_obs + N_vio)
+
+    obj_T[N_obs:] = 1
+    y_min = -5
+    y_max = 1
+    T = m.addMVar(N_obs + N_vio, lb=y_min, ub=y_max, obj=obj_T)
+
+    lam = 1e9
+    delta_obs = m.addMVar(N_obs, lb=0, ub=y_max - y_min, obj=lam)
+    m.modelSense = gp.GRB.MINIMIZE
+
+    Y_obs = realScores[hasScore > .5]
+    m.addConstr(T[:N_obs] - Y_obs <= delta_obs)
+    m.addConstr(Y_obs - T[:N_obs] <= delta_obs)
+
+    mask = np.zeros((N_obs + N_vio, N_obs + N_vio))
+    I = np.eye(N_obs + N_vio)
+    for i in range(N_obs + N_vio):
+        mask[:, i] = 1
+        m.addConstr(((mask - I) @ T) <= L_const * D[:, i])
+        mask[:, i] = 0
+
+    m.optimize()
+
+    info = {'lam': lam}
+
+    if m.status == gp.GRB.OPTIMAL:
+        dist = np.abs(delta_obs.x - np.abs(T.x[:N_obs] - Y_obs))
+        print('Max delta dist:', np.max(dist), '; Total dist:', np.sum(dist))
+
+        info['min_obj'] = m.objVal
+        info['min_T_obj'] = np.sum(T.x[N_obs:])
+        info['min_delta_obs'] = delta_obs.x
+    else:
+        info['min_status'] = m.status
+
+    T.obj = -obj_T
+    m.optimize()
+
+    if m.status == gp.GRB.OPTIMAL:
+        dist = np.abs(delta_obs.x - np.abs(T.x[:N_obs] - Y_obs))
+        print('Max delta dist:', np.max(dist), '; Total dist:', np.sum(dist))
+
+        info['max_obj'] = m.objVal
+        info['max_T_obj'] = np.sum(T.x[N_obs:])
+        info['max_delta_obs'] = delta_obs.x
+    else:
+        info['max_status'] = m.status
+
+    min_obj = info['min_T_obj'] + np.sum((alloc * realScores)[alloc * hasScore > .5])
+    min_obj /= np.sum(alloc)
+    max_obj = info['max_T_obj'] + np.sum((alloc * realScores)[alloc * hasScore > .5])
+    max_obj /= np.sum(alloc)
+
+    return min_obj, max_obj
 
 
 def main(args):
@@ -174,6 +376,17 @@ def main(args):
     # Compute the worst and best case scores
     metric_to_allocation_scores['best_usw'] = {}
     metric_to_allocation_scores['worst_usw'] = {}
+    metric_to_allocation_scores['lb_mono'] = {}
+    metric_to_allocation_scores['ub_mono'] = {}
+    metric_to_allocation_scores['lb_lip_1'] = {}
+    metric_to_allocation_scores['ub_lip_1'] = {}
+    metric_to_allocation_scores['lb_lip_2'] = {}
+    metric_to_allocation_scores['ub_lip_2'] = {}
+    metric_to_allocation_scores['lb_lip_3'] = {}
+    metric_to_allocation_scores['ub_lip_3'] = {}
+
+    # Level 1 is .01, level 2 is .05, level 3 is .1
+    topic_to_lipschitz = {"cs": {1: 15.649, 2: 2.467, 3: 0.375}}
 
     all_allocs = [pred_alloc, pred_alloc_user_embs, pred_alloc_badges] + non_pred_allocs + rand_allocs
     all_names = ['pred', 'pred_user_embs', 'pred_badges'] + list(range(11)) + ["rand" + str(i) for i in range(1)]
@@ -212,6 +425,28 @@ def main(args):
         pickle.dump(metric_to_allocation_scores,
                     open(os.path.join(data_dir, "metric_to_allocation_scores_%d.pkl" % seed), 'wb'))
         print("Worst/best for %s is %.2f, %.2f" % (alloc_name, worst_usw, best_usw), flush=True)
+
+        lb_mono, ub_mono = \
+            compute_ymin_ymax_monotonic(alloc, realScores, hasScore,
+                                        user_rep_scores, estimated_topical_sim, kp_matching_scores)
+        metric_to_allocation_scores['lb_mono'][alloc_name], metric_to_allocation_scores['ub_mono'][alloc_name] = \
+            lb_mono, ub_mono
+
+        pickle.dump(metric_to_allocation_scores,
+                    open(os.path.join(data_dir, "metric_to_allocation_scores_%d.pkl" % seed), 'wb'))
+        print("LB/UB mono for %s is %.2f, %.2f" % (alloc_name, lb_mono, ub_mono), flush=True)
+
+        for lip_level in [1, 2, 3]:
+            lb_lip, ub_lip = \
+                compute_ymin_ymax_lipschitz(alloc, realScores, hasScore,
+                                            user_rep_scores, estimated_topical_sim,
+                                            kp_matching_scores, topic_to_lipschitz[topic][lip_level])
+            metric_to_allocation_scores['lb_lip_%d' % lip_level][alloc_name], metric_to_allocation_scores['ub_lip_%d' % lip_level][alloc_name] = \
+                lb_lip, ub_lip
+
+            pickle.dump(metric_to_allocation_scores,
+                        open(os.path.join(data_dir, "metric_to_allocation_scores_%d.pkl" % seed), 'wb'))
+            print("LB/UB lipschitz for %s at level %d is %.2f, %.2f" % (alloc_name, lip_level, lb_lip, ub_lip), flush=True)
 
 
 if __name__ == "__main__":
