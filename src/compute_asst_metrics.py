@@ -392,7 +392,8 @@ def main(args):
                           "academia": {1: 21.880, 2: 5.683, 3: 2.310}}
 
     all_allocs = [pred_alloc, pred_alloc_user_embs, pred_alloc_badges] + non_pred_allocs + rand_allocs
-    all_names = ['pred', 'pred_user_embs', 'pred_badges'] + list(range(11)) + ["rand" + str(i) for i in range(1)]
+    # all_names = ['pred', 'pred_user_embs', 'pred_badges'] + list(range(11)) + ["rand" + str(i) for i in range(1)]
+    all_names = ['pred', 'pred_user_embs', 'pred_badges'] + [5] + ["rand" + str(i) for i in range(1)]
 
     delta = .1
     n_samples = len(scaled_test)
