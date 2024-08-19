@@ -386,7 +386,10 @@ def main(args):
     metric_to_allocation_scores['ub_lip_3'] = {}
 
     # Level 1 is .01, level 2 is .05, level 3 is .1
-    topic_to_lipschitz = {"cs": {1: 15.649, 2: 2.467, 3: 0.375}}
+    topic_to_lipschitz = {"cs": {1: 15.649, 2: 2.467, 3: 0.375},
+                          "biology": {1: 16.744, 2: 4.642, 3: 1.993},
+                          "chemistry": {1: 13.159, 2: 3.732, 3: 1.458},
+                          "academia": {1: 21.880, 2: 5.683, 3: 2.310}}
 
     all_allocs = [pred_alloc, pred_alloc_user_embs, pred_alloc_badges] + non_pred_allocs + rand_allocs
     all_names = ['pred', 'pred_user_embs', 'pred_badges'] + list(range(11)) + ["rand" + str(i) for i in range(1)]
